@@ -20,9 +20,10 @@ in_theaters = []
 for entry in content:
     print entry.keys()
     for movie in entry['movies']:
-        print movie.keys()
-        print movie['title']
-        in_theaters.append(movie['title'])
+        if movie['originalTitle']:
+            in_theaters.append(movie['originalTitle'])
+        else:
+            in_theaters.append(movie['title'])
 
 movie_actor_map = {}
 actor_age_map = {}
@@ -30,7 +31,15 @@ actor_age_map = {}
 # requires a url-safe movie title
 def get_actor_list(title):
     url = title_search_api.format(title)
-    print url
+    content = json.loads(r.content)
+    actors_string = content['Actors']
+    actors_list = actors_string.split(',')
+
+    for index, actor in enumerate(actors_list):
+        if actor[0] == ' ':
+            actors_list[index] = actor[1:]
+
+    return actors_list
 
 for movie in in_theaters:
     # encode movie titles as utf8 and make them url-safe
