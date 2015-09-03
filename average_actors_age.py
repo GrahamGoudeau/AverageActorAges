@@ -7,9 +7,9 @@ current_year = 2015
 
 currently_playing_api = 'http://www.myapifilms.com/imdb/inTheaters?actors=S'
 
-# format the api urls with the movie title or actor and send a GET request
-title_search_api = 'http://www.omdbapi.com/?t={}&plot=short&r=json&y=' + str(current_year)
-print title_search_api
+# format the following api urls with the movie title or actor and
+# year if necessary and send a GET request
+title_search_api = 'http://www.omdbapi.com/?t={}&plot=short&r=json&y={}'
 actor_search_api = 'http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles={}&rvsection=0'
 
 birth_date_regex = r'\| birth_date\s*=\s*{{.*?\|(\d+).*}}'
@@ -22,7 +22,6 @@ def get_current_movies():
 
         content = json.loads(r.content)
     else:
-        print "Not making api call"
         with open('content.txt', 'r') as f:
             content = json.loads(f.read())
 
@@ -42,15 +41,22 @@ def get_url_safe_title(string):
 def get_url_safe_actor(string):
     # replace spaces with underscores to conform to wikipedia api
     string = string.replace(' ', '_')
-    print urllib.quote_plus(string.encode('utf8'))
     return urllib.quote_plus(string.encode('utf8'))
 
 # requires a url-safe movie title
 def get_actor_list(title):
-    r = requests.get(title_search_api.format(title))
+    r = requests.get(title_search_api.format(title, current_year))
     content = json.loads(r.content)
+
+    # try searching for movies the previous year too
     if 'Error' in content:
-        return []
+        r = requests.get(title_search_api.format(title, current_year - 1))
+        content = json.loads(r.content)
+
+        # if still an error, then the movie cannot be found
+        if 'Error' in content:
+            return []
+
     actors_string = content['Actors']
     actors_list = actors_string.split(',')
     for index, actor in enumerate(actors_list):
@@ -73,19 +79,8 @@ def get_actor_age(actor):
     infobox = pages[page_number]['revisions'][0]['*']
     search_obj = re.search(birth_date_regex, infobox)
     if search_obj:
+        # get the actor's name from the wikipedia info box
         return current_year - int(search_obj.group(1))
-
-'''
-movie_actor_map = {}
-actor_age_map = {}
-
-for movie in in_theaters:
-    # encode movie titles as utf8 and make them url-safe
-    actor_list = get_actor_list(get_url_safe_string(movie))
-    print actor_list
-r = requests.get('http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles=Simon_Pegg&rvsection=0')
-print r.content
-'''
 
 if __name__ == "__main__":
     currently_playing_titles = get_current_movies()
@@ -97,7 +92,6 @@ if __name__ == "__main__":
     for title in currently_playing_titles:
         safe_title = get_url_safe_title(title)
         actor_list = get_actor_list(safe_title)
-        print actor_list
 
         ages = []
         for actor in actor_list:
@@ -115,6 +109,6 @@ if __name__ == "__main__":
                     actor_age_map[safe_actor] = age
 
         if len(ages) > 0:
-            print title
-            print "Average age:"
-            print (sum(ages) * 1.0) / len(ages)
+            movie_age_map[title] = (sum(ages) * 1.0) / len(ages)
+    for key in movie_age_map.keys():
+        print key, movie_age_map[key]
