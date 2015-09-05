@@ -51,7 +51,10 @@ def get_url_safe_actor(string):
 
 # requires a url-safe movie title
 def get_actor_list(title):
-    r = requests.get(title_search_api.format(title, current_year))
+    try:
+        r = requests.get(title_search_api.format(title, current_year))
+    except requests.exceptions.ConnectionError:
+        return []
     content = json.loads(r.content)
 
     # try searching for movies the previous year too
@@ -73,7 +76,10 @@ def get_actor_list(title):
 
 # requires url-safe actor name
 def get_actor_age(actor):
-    r = requests.get(actor_search_api.format(actor))
+    try:
+        r = requests.get(actor_search_api.format(actor))
+    except requests.exceptions.ConnectionError:
+        return None
     content = json.loads(r.content)
     pages = content['query']['pages']
 
@@ -99,8 +105,9 @@ if __name__ == "__main__":
 
     titles = []
     ages = []
-    for title in currently_playing_titles:
-        print "Gathering actor/actress information for '{}'".format(title)
+    for index, title in enumerate(currently_playing_titles):
+        print "Gathering actor/actress information for '{}' - ".format(title),
+        print str(index + 1) + " / " + str(len(currently_playing_titles))
         actor_list = get_actor_list(get_url_safe_title(title))
 
         for actor in actor_list:
@@ -115,29 +122,19 @@ if __name__ == "__main__":
 
                 # only consider ages we actually found
                 if age is not None:
-                    titles.append(title)
                     ages.append(age)
                     actor_age_map[safe_actor] = age
 
         if len(ages) > 0:
             movie_age_map[title] = (sum(ages) * 1.0) / len(ages)
-    '''
-    index = np.arange(len(currently_playing_titles))
-    opacity = 0.4
-    bar_width = 0.35
-    plt.bar(index, ages, bar_width, alpha=opacity,
-            color='b', label='Average age of cast')
-    plt.xlabel('Movie')
-    plt.ylabel('Average age')
-    plt.title('Average ages of movie casts')
-    plt.xticks(index, titles)
-    plt.legend()
-    plt.tight_layout()
-    '''
-    plt.bar(titles, ages, align='center')
-    plt.title('Average ages of movie casts')
-    plt.xlabel('Movies')
-    plt.ylabel('Average age')
-    plt.savefig()
-    for key in movie_age_map.keys():
-        print key, movie_age_map[key]
+            titles.append(title)
+
+    graph_titles = movie_age_map.keys()
+    graph_ages = [movie_age_map[title] for title in graph_titles]
+    y_pos = np.arange(len(graph_titles))
+
+    plt.barh(y_pos, graph_ages, align='center', alpha=0.4)
+    plt.yticks(y_pos, graph_titles)
+    plt.xlabel('Average ages')
+    plt.title('Average ages of casts of currently playing movies')
+    plt.savefig('average_ages.pdf')
