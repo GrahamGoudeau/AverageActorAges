@@ -106,7 +106,7 @@ if __name__ == "__main__":
     titles = []
     ages = []
     for index, title in enumerate(currently_playing_titles):
-        print "Gathering actor/actress information for '{}' - ".format(title),
+        print "Gathering actor/actress ages for '{}' - ".format(title),
         print str(index + 1) + " / " + str(len(currently_playing_titles))
         actor_list = get_actor_list(get_url_safe_title(title))
 
@@ -137,4 +137,7 @@ if __name__ == "__main__":
     plt.yticks(y_pos, graph_titles)
     plt.xlabel('Average ages')
     plt.title('Average ages of casts of currently playing movies')
-    plt.savefig('average_ages.pdf')
+    plt.tick_params(labelsize='small')
+    plt.autoscale()
+    plt.tight_layout()
+    plt.savefig('ages.pdf')
