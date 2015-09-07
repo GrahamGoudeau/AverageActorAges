@@ -4,7 +4,6 @@ import urllib
 import requests
 import json
 import datetime
-import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
@@ -58,7 +57,11 @@ def get_current_movies():
         raise Exception('Unable to fetch currently playing movies')
 
     r.raise_for_status()
-    content = json.loads(r.content)
+    try:
+        content = json.loads(r.content)
+    except ValueError:
+        raise Exception('Error in content returned by API')
+
     in_theaters = []
     for entry in content:
         for movie in entry['movies']:
@@ -99,7 +102,10 @@ def get_actor_list(title, current_year):
     if 'Error' in content:
         r = requests.get(title_search_api.format(title, current_year - 1))
         r.raise_for_status()
-        content = json.loads(r.content)
+        try:
+            content = json.loads(r.content)
+        except ValueError:
+            raise Exception('Error in content returned by API')
 
         # if still an error, then the movie cannot be found
         if 'Error' in content:
@@ -117,7 +123,7 @@ def get_actor_list(title, current_year):
 def create_graph(movie_age_map, pdf_name):
     graph_titles = movie_age_map.keys()
     graph_ages = [movie_age_map[title] for title in graph_titles]
-    y_pos = np.arange(len(graph_titles))
+    y_pos = xrange(len(graph_titles))
 
     plt.barh(y_pos, graph_ages, align='center', alpha=0.4)
     plt.yticks(y_pos, graph_titles)
@@ -130,8 +136,8 @@ def create_graph(movie_age_map, pdf_name):
 
 def get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map):
     if do_print:
-        print "Gathering actor/actress ages for '{}' - ".format(title),
-        print str(index + 1) + " / " + str(len(currently_playing_titles))
+        print 'Gathering actor/actress ages for '{}' - '.format(title),
+        print str(index + 1) + ' / ' + str(len(currently_playing_titles))
 
     ages = []
     actor_list = get_actor_list(get_url_safe_title(title), datetime.datetime.now().year)
@@ -164,7 +170,10 @@ def get_actor_age(actor):
     except requests.exceptions.ConnectionError:
         return None
     r.raise_for_status()
-    content = json.loads(r.content)
+    try:
+        content = json.loads(r.content)
+    except ValueError:
+        raise Exception('Error in content returned by API')
     pages = content['query']['pages']
 
     # expect only one page
@@ -173,10 +182,9 @@ def get_actor_age(actor):
         # actor not on wikipedia or name different
         return None
 
-    # get the actor's name from the wikipedia info box
+    # parse the birth date of an actor or actress from the wikipedia infobox
     infobox = pages[page_number]['revisions'][0]['*']
 
-    # parse the birth date of an actor or actress from the wikipedia infobox
     birth_date_regex = r'\| birth_date\s*=\s*{{.*?\|(\d+).*}}'
     search_obj = re.search(birth_date_regex, infobox)
     if search_obj:
@@ -184,11 +192,11 @@ def get_actor_age(actor):
     else:
         return None
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     do_print, pdf_name = parse_call_options()
 
     if do_print:
-        print "Gathering currently playing movies..."
+        print 'Gathering currently playing movies...'
 
     currently_playing_titles = get_current_movies()
     movie_age_map = {}
@@ -200,5 +208,5 @@ if __name__ == "__main__":
         get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map)
 
     if do_print:
-        print "Generating PDF of the results..."
+        print 'Generating PDF of the results...'
     create_graph(movie_age_map, pdf_name)
