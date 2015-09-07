@@ -57,9 +57,7 @@ def get_current_movies():
     except requests.exceptions.ConnectionError:
         raise Exception('Unable to fetch currently playing movies')
 
-    with open('content.txt', 'w') as f:
-        f.write(r.content)
-
+    r.raise_for_status()
     content = json.loads(r.content)
     in_theaters = []
     for entry in content:
@@ -89,11 +87,18 @@ def get_actor_list(title, current_year):
         r = requests.get(title_search_api.format(title, current_year))
     except requests.exceptions.ConnectionError:
         return []
-    content = json.loads(r.content)
+
+    r.raise_for_status()
+
+    try:
+        content = json.loads(r.content)
+    except ValueError:
+        raise Exception('Error in content returned by API')
 
     # try searching for movies the previous year too
     if 'Error' in content:
         r = requests.get(title_search_api.format(title, current_year - 1))
+        r.raise_for_status()
         content = json.loads(r.content)
 
         # if still an error, then the movie cannot be found
@@ -158,6 +163,7 @@ def get_actor_age(actor):
         r = requests.get(actor_search_api.format(actor))
     except requests.exceptions.ConnectionError:
         return None
+    r.raise_for_status()
     content = json.loads(r.content)
     pages = content['query']['pages']
 
@@ -193,4 +199,6 @@ if __name__ == "__main__":
     for index, title in enumerate(currently_playing_titles):
         get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map)
 
+    if do_print:
+        print "Generating PDF of the results..."
     create_graph(movie_age_map, pdf_name)
