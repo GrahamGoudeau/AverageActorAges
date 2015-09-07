@@ -109,6 +109,47 @@ def get_actor_list(title, current_year):
 
     return actors_list
 
+def create_graph(movie_age_map, pdf_name):
+    graph_titles = movie_age_map.keys()
+    graph_ages = [movie_age_map[title] for title in graph_titles]
+    y_pos = np.arange(len(graph_titles))
+
+    plt.barh(y_pos, graph_ages, align='center', alpha=0.4)
+    plt.yticks(y_pos, graph_titles)
+    plt.xlabel('Average ages')
+    plt.title('Average ages of casts of currently playing movies')
+    plt.tick_params(labelsize='small')
+    plt.autoscale()
+    plt.tight_layout()
+    plt.savefig(pdf_name + '.pdf')
+
+def get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map):
+    if do_print:
+        print "Gathering actor/actress ages for '{}' - ".format(title),
+        print str(index + 1) + " / " + str(len(currently_playing_titles))
+
+    ages = []
+    actor_list = get_actor_list(get_url_safe_title(title), datetime.datetime.now().year)
+
+    for actor in actor_list:
+        safe_actor = get_url_safe_actor(actor)
+
+        # if seen this actor already, use the cached value
+        if safe_actor in actor_age_map:
+            ages.append(actor_age_map[safe_actor])
+        else:
+            # may return None if the search failed
+            age = get_actor_age(safe_actor)
+
+            # only consider ages we actually found
+            if age is not None:
+                ages.append(age)
+                actor_age_map[safe_actor] = age
+
+    if len(ages) > 0:
+        movie_age_map[title] = (sum(ages) * 1.0) / len(ages)
+
+
 # requires url-safe actor name
 def get_actor_age(actor):
     try:
@@ -129,6 +170,8 @@ def get_actor_age(actor):
     search_obj = re.search(birth_date_regex, infobox)
     if search_obj:
         return datetime.datetime.now().year - int(search_obj.group(1))
+    else:
+        return None
 
 if __name__ == "__main__":
     do_print, pdf_name = parse_call_options()
@@ -143,39 +186,6 @@ if __name__ == "__main__":
     actor_age_map = {}
 
     for index, title in enumerate(currently_playing_titles):
-        ages = []
-        if do_print:
-            print "Gathering actor/actress ages for '{}' - ".format(title),
-            print str(index + 1) + " / " + str(len(currently_playing_titles))
-        actor_list = get_actor_list(get_url_safe_title(title), datetime.datetime.now().year)
+        get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map)
 
-        for actor in actor_list:
-            safe_actor = get_url_safe_actor(actor)
-
-            # if seen this actor already, use the cached value
-            if safe_actor in actor_age_map:
-                ages.append(actor_age_map[safe_actor])
-            else:
-                # may return None if the search failed
-                age = get_actor_age(safe_actor)
-
-                # only consider ages we actually found
-                if age is not None:
-                    ages.append(age)
-                    actor_age_map[safe_actor] = age
-
-        if len(ages) > 0:
-            movie_age_map[title] = (sum(ages) * 1.0) / len(ages)
-
-    graph_titles = movie_age_map.keys()
-    graph_ages = [movie_age_map[title] for title in graph_titles]
-    y_pos = np.arange(len(graph_titles))
-
-    plt.barh(y_pos, graph_ages, align='center', alpha=0.4)
-    plt.yticks(y_pos, graph_titles)
-    plt.xlabel('Average ages')
-    plt.title('Average ages of casts of currently playing movies')
-    plt.tick_params(labelsize='small')
-    plt.autoscale()
-    plt.tight_layout()
-    plt.savefig(pdf_name + '.pdf')
+    create_graph(movie_age_map, pdf_name)
