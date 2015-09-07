@@ -19,7 +19,7 @@ actor_search_api = 'http://en.wikipedia.org/w/api.php?action=query&prop=revision
 # parse the birth date of an actor or actress from the wikipedia infobox
 birth_date_regex = r'\| birth_date\s*=\s*{{.*?\|(\d+).*}}'
 
-default_pdf_name = 'average_ages.pdf'
+default_pdf_name = 'ages_average'
 
 # defaults: no printing, use default_pdf_name
 def parse_call_options():
@@ -84,7 +84,7 @@ def get_url_safe_actor(string):
     return urllib.quote_plus(string.encode('utf8'))
 
 # requires a url-safe movie title
-def get_actor_list(title):
+def get_actor_list(title, current_year):
     try:
         r = requests.get(title_search_api.format(title, current_year))
     except requests.exceptions.ConnectionError:
@@ -142,13 +142,12 @@ if __name__ == "__main__":
     # cache actor names we have seen already
     actor_age_map = {}
 
-    titles = []
-    ages = []
     for index, title in enumerate(currently_playing_titles):
+        ages = []
         if do_print:
             print "Gathering actor/actress ages for '{}' - ".format(title),
             print str(index + 1) + " / " + str(len(currently_playing_titles))
-        actor_list = get_actor_list(get_url_safe_title(title))
+        actor_list = get_actor_list(get_url_safe_title(title), datetime.datetime.now().year)
 
         for actor in actor_list:
             safe_actor = get_url_safe_actor(actor)
@@ -156,7 +155,6 @@ if __name__ == "__main__":
             # if seen this actor already, use the cached value
             if safe_actor in actor_age_map:
                 ages.append(actor_age_map[safe_actor])
-                titles.append(title)
             else:
                 # may return None if the search failed
                 age = get_actor_age(safe_actor)
@@ -168,7 +166,6 @@ if __name__ == "__main__":
 
         if len(ages) > 0:
             movie_age_map[title] = (sum(ages) * 1.0) / len(ages)
-            titles.append(title)
 
     graph_titles = movie_age_map.keys()
     graph_ages = [movie_age_map[title] for title in graph_titles]
