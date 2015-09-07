@@ -6,16 +6,16 @@ The tool relies on [MyAPIFilms](http://www.myapifilms.com/) for the list of curr
 ## Running
 The tool can be run from the command line with a simple call:
 
-$ python average_actors_age.py
+    $ python average_actors_age.py
 
 This will silently access the above APIs and generate a PDF with the default name `average_ages.pdf` with the resulting bar graph.
 #### Command Line Arguments
 There are various arguments that can be passed to the program.  If more than one is used, they must be combined (e.g., `-vn`).  If this is the case, order is irrelevant.
 
-$ python average_actors_age.py -v
+    $ python average_actors_age.py -v
 
 will print to the terminal the status of the program as it is running.
 
-$ python average_actors_age.py -n {PDF name}
+    $ python average_actors_age.py -n {PDF name}
 
 allows you to give a custom name to the bar graph PDF that is generated.
