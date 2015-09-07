@@ -18,4 +18,4 @@ will print to the terminal the status of the program as it is running.
 
     $ python average_actors_age.py -n {PDF name}
 
-allows you to give a custom name to the bar graph PDF that is generated.
+allows you to give a custom name to the bar graph PDF that is generated.  Only provide the filename up to the `.pdf` extension.
