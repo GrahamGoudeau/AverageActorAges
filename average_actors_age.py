@@ -1,13 +1,13 @@
+import sys
 import re
 import urllib
 import requests
 import json
+import datetime
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
-
-current_year = 2015
 
 currently_playing_api = 'http://www.myapifilms.com/imdb/inTheaters'
 
@@ -16,21 +16,55 @@ currently_playing_api = 'http://www.myapifilms.com/imdb/inTheaters'
 title_search_api = 'http://www.omdbapi.com/?t={}&plot=short&r=json&y={}'
 actor_search_api = 'http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles={}&rvsection=0'
 
+# parse the birth date of an actor or actress from the wikipedia infobox
 birth_date_regex = r'\| birth_date\s*=\s*{{.*?\|(\d+).*}}'
 
-def get_current_movies():
-    if True:
-        r = requests.get(currently_playing_api)
-        with open('content.txt', 'w') as f:
-            f.write(r.content)
+default_pdf_name = 'average_ages.pdf'
 
-        content = json.loads(r.content)
-    '''
+# defaults: no printing, use default_pdf_name
+def parse_call_options():
+    num_args = len(sys.argv)
+    if num_args == 1:
+        return (False, default_pdf_name)
+
+    if num_args == 2 or num_args == 3:
+        printing = False
+        file_name = default_pdf_name
+        arg = sys.argv[1]
+
+        if arg[0] != '-':
+            raise Exception('Unknown command line argument: \'{}\''.format(arg))
+
+        if 'n' not in arg and num_args == 3:
+            raise Exception('Unexpected number of command line argumets')
+
+        for c in arg:
+            if c == '-': continue
+
+            if c == 'v':
+                printing = True
+            elif c == 'n':
+                if num_args == 3:
+                    file_name = sys.argv[2]
+                if num_args == 2:
+                    raise Exception('Expected filename, none found')
+            else:
+                raise Exception('Unrecognized argument: \'{}\''.format(c))
+
+        return (printing, file_name)
     else:
-        with open('content.txt', 'r') as f:
-            content = json.loads(f.read())
-            '''
+        raise Exception('Unexpected number of command line arguments')
 
+def get_current_movies():
+    try:
+        r = requests.get(currently_playing_api)
+    except requests.exceptions.ConnectionError:
+        raise Exception('Unable to fetch currently playing movies')
+
+    with open('content.txt', 'w') as f:
+        f.write(r.content)
+
+    content = json.loads(r.content)
     in_theaters = []
     for entry in content:
         for movie in entry['movies']:
@@ -69,6 +103,7 @@ def get_actor_list(title):
     actors_string = content['Actors']
     actors_list = actors_string.split(',')
     for index, actor in enumerate(actors_list):
+        # strip any leading whitespace from actor names
         if actor[0] == ' ':
             actors_list[index] = actor[1:]
 
@@ -93,10 +128,14 @@ def get_actor_age(actor):
     infobox = pages[page_number]['revisions'][0]['*']
     search_obj = re.search(birth_date_regex, infobox)
     if search_obj:
-        return current_year - int(search_obj.group(1))
+        return datetime.datetime.now().year - int(search_obj.group(1))
 
 if __name__ == "__main__":
-    print "Gathering currently playing movies..."
+    do_print, pdf_name = parse_call_options()
+
+    if do_print:
+        print "Gathering currently playing movies..."
+
     currently_playing_titles = get_current_movies()
     movie_age_map = {}
 
@@ -106,8 +145,9 @@ if __name__ == "__main__":
     titles = []
     ages = []
     for index, title in enumerate(currently_playing_titles):
-        print "Gathering actor/actress ages for '{}' - ".format(title),
-        print str(index + 1) + " / " + str(len(currently_playing_titles))
+        if do_print:
+            print "Gathering actor/actress ages for '{}' - ".format(title),
+            print str(index + 1) + " / " + str(len(currently_playing_titles))
         actor_list = get_actor_list(get_url_safe_title(title))
 
         for actor in actor_list:
@@ -118,6 +158,7 @@ if __name__ == "__main__":
                 ages.append(actor_age_map[safe_actor])
                 titles.append(title)
             else:
+                # may return None if the search failed
                 age = get_actor_age(safe_actor)
 
                 # only consider ages we actually found
@@ -140,4 +181,4 @@ if __name__ == "__main__":
     plt.tick_params(labelsize='small')
     plt.autoscale()
     plt.tight_layout()
-    plt.savefig('ages.pdf')
+    plt.savefig(pdf_name + '.pdf')
