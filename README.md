@@ -8,7 +8,7 @@ The tool can be run from the command line with a simple call:
 
     $ python average_actors_age.py
 
-This will silently access the above APIs and generate a PDF with the default name `average_ages.pdf` with the resulting bar graph.
+This will silently access the above APIs and generate a PDF with the default name `average_ages.pdf` with the resulting bar graph. If a currently-playing movie does not appear in the final bar graph, it is because searching for the actors or their ages failed in some way.
 #### Command Line Arguments
 There are various arguments that can be passed to the program.  If more than one is used, they must be combined (e.g., `-vn`).  If this is the case, order is irrelevant.
 
