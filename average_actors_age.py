@@ -9,20 +9,10 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
-currently_playing_api = 'http://www.myapifilms.com/imdb/inTheaters'
-
-# format the following api urls with the movie title or actor and
-# year if necessary and send a GET request
-title_search_api = 'http://www.omdbapi.com/?t={}&plot=short&r=json&y={}'
-actor_search_api = 'http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles={}&rvsection=0'
-
-# parse the birth date of an actor or actress from the wikipedia infobox
-birth_date_regex = r'\| birth_date\s*=\s*{{.*?\|(\d+).*}}'
-
-default_pdf_name = 'ages_average'
 
 # defaults: no printing, use default_pdf_name
 def parse_call_options():
+    default_pdf_name = 'ages_average'
     num_args = len(sys.argv)
     if num_args == 1:
         return (False, default_pdf_name)
@@ -56,6 +46,7 @@ def parse_call_options():
         raise Exception('Unexpected number of command line arguments')
 
 def get_current_movies():
+    currently_playing_api = 'http://www.myapifilms.com/imdb/inTheaters'
     try:
         r = requests.get(currently_playing_api)
     except requests.exceptions.ConnectionError:
@@ -85,6 +76,8 @@ def get_url_safe_actor(string):
 
 # requires a url-safe movie title
 def get_actor_list(title, current_year):
+    # format the api url string with the title and year to search for
+    title_search_api = 'http://www.omdbapi.com/?t={}&plot=short&r=json&y={}'
     try:
         r = requests.get(title_search_api.format(title, current_year))
     except requests.exceptions.ConnectionError:
@@ -152,6 +145,8 @@ def get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map):
 
 # requires url-safe actor name
 def get_actor_age(actor):
+    # format api url string with the actor's name
+    actor_search_api = 'http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles={}&rvsection=0'
     try:
         r = requests.get(actor_search_api.format(actor))
     except requests.exceptions.ConnectionError:
@@ -167,6 +162,9 @@ def get_actor_age(actor):
 
     # get the actor's name from the wikipedia info box
     infobox = pages[page_number]['revisions'][0]['*']
+
+    # parse the birth date of an actor or actress from the wikipedia infobox
+    birth_date_regex = r'\| birth_date\s*=\s*{{.*?\|(\d+).*}}'
     search_obj = re.search(birth_date_regex, infobox)
     if search_obj:
         return datetime.datetime.now().year - int(search_obj.group(1))
