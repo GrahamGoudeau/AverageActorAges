@@ -28,8 +28,13 @@ def parse_call_options():
         if 'n' not in arg and num_args == 3:
             raise Exception('Unexpected number of command line argumets')
 
+        seen_hyphen = False
         for c in arg:
-            if c == '-': continue
+            if c == '-' and not seen_hyphen:
+                seen_hyphen = True
+                continue
+            elif c == '-' and seen_hyphen:
+                raise Exception('\'-\' character only allowed at beginning of arguments')
 
             if c == 'v':
                 printing = True
@@ -66,9 +71,11 @@ def get_current_movies():
 
     return in_theaters
 
+# get a url-safe version of a movie title
 def get_url_safe_title(string):
     return urllib.quote_plus(string.encode('utf8'))
 
+# get a wiki api-safe version of an actor or actress's name
 def get_url_safe_actor(string):
     # replace spaces with underscores to conform to wikipedia api
     string = string.replace(' ', '_')
@@ -110,7 +117,7 @@ def create_graph(movie_age_map, pdf_name):
     plt.barh(y_pos, graph_ages, align='center', alpha=0.4)
     plt.yticks(y_pos, graph_titles)
     plt.xlabel('Average ages')
-    plt.title('Average ages of casts of currently playing movies')
+    plt.title('Average ages of the casts of currently playing movies')
     plt.tick_params(labelsize='small')
     plt.autoscale()
     plt.tight_layout()
