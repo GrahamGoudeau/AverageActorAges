@@ -2,7 +2,10 @@
 ## Description
 A Python tool for finding the average ages of the casts of currently-playing movies. It uses `pyplot` from `matplotlib` to generate an easy-to-read bar graph of the results. The bar graph is output as a PDF at the end of the process.
 ## API Dependencies
-The tool relies on [MyAPIFilms](http://www.myapifilms.com/) for the list of currently-playing movies, the [OMDb API](http://www.omdbapi.com/) for actor lists for those movies, and [Wikipedia's API](https://www.mediawiki.org/wiki/API:Main_page) for actor biographies.
+The tool relies on:
+* [MyAPIFilms](http://www.myapifilms.com/) for the list of currently-playing movies
+* [OMDb API](http://www.omdbapi.com/) for actor lists for those movies
+* [Wikipedia's API](https://www.mediawiki.org/wiki/API:Main_page) for actor biographies.
 ## Running
 The tool can be run from the command line with a simple call using Python 2.7:
 
