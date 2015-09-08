@@ -11,13 +11,13 @@ from matplotlib import pyplot as plt
 
 # defaults: no printing, use default_pdf_name
 def parse_call_options():
+    printing = False
     default_pdf_name = 'ages_average'
     num_args = len(sys.argv)
     if num_args == 1:
-        return (False, default_pdf_name)
+        return (printing, default_pdf_name)
 
     if num_args == 2 or num_args == 3:
-        printing = False
         file_name = default_pdf_name
         arg = sys.argv[1]
 
@@ -56,11 +56,10 @@ def get_current_movies():
     except requests.exceptions.ConnectionError:
         raise Exception('Unable to fetch currently playing movies')
 
-    r.raise_for_status()
-    try:
-        content = json.loads(r.content)
-    except ValueError:
-        raise Exception('Error in content returned by API')
+    if r.status_code != 200:
+        raise Exception('Unable to fetch currently playing movies')
+
+    content = json.loads(r.content)
 
     in_theaters = []
     for entry in content:
@@ -82,7 +81,9 @@ def get_url_safe_actor(string):
     string = string.replace(' ', '_')
     return urllib.quote_plus(string.encode('utf8'))
 
-# requires a url-safe movie title
+# requires a url-safe movie title;
+# requires the current year in order to avoid naming conflicts with
+# movies with the same name released in previous years
 def get_actor_list(title, current_year):
     # format the api url string with the title and year to search for
     title_search_api = 'http://www.omdbapi.com/?t={}&plot=short&r=json&y={}'
@@ -91,21 +92,18 @@ def get_actor_list(title, current_year):
     except requests.exceptions.ConnectionError:
         return []
 
-    r.raise_for_status()
+    if r.status_code != 200:
+        return []
 
-    try:
-        content = json.loads(r.content)
-    except ValueError:
-        raise Exception('Error in content returned by API')
+    content = json.loads(r.content)
 
     # try searching for movies the previous year too
     if 'Error' in content:
         r = requests.get(title_search_api.format(title, current_year - 1))
-        r.raise_for_status()
-        try:
-            content = json.loads(r.content)
-        except ValueError:
-            raise Exception('Error in content returned by API')
+        if r.status_code != 200:
+            return []
+
+        content = json.loads(r.content)
 
         # if still an error, then the movie cannot be found
         if 'Error' in content:
@@ -113,8 +111,8 @@ def get_actor_list(title, current_year):
 
     actors_string = content['Actors']
     actors_list = actors_string.split(',')
+    # strip any leading whitespace from actor names
     for index, actor in enumerate(actors_list):
-        # strip any leading whitespace from actor names
         if actor[0] == ' ':
             actors_list[index] = actor[1:]
 
@@ -136,7 +134,7 @@ def create_graph(movie_age_map, pdf_name):
 
 def get_average_cast_age(do_print, index, title, movie_age_map, actor_age_map):
     if do_print:
-        print 'Gathering actor/actress ages for '{}' - '.format(title),
+        print 'Gathering actor/actress ages for \'{}\' - '.format(title),
         print str(index + 1) + ' / ' + str(len(currently_playing_titles))
 
     ages = []
@@ -169,11 +167,11 @@ def get_actor_age(actor):
         r = requests.get(actor_search_api.format(actor))
     except requests.exceptions.ConnectionError:
         return None
-    r.raise_for_status()
-    try:
-        content = json.loads(r.content)
-    except ValueError:
-        raise Exception('Error in content returned by API')
+
+    if r.status_code != 200:
+        return None
+
+    content = json.loads(r.content)
     pages = content['query']['pages']
 
     # expect only one page
