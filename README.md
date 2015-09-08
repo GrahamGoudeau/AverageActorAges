@@ -4,7 +4,7 @@ A Python tool for finding the average ages of the casts of currently-playing mov
 ## API Dependencies
 The tool relies on [MyAPIFilms](http://www.myapifilms.com/) for the list of currently-playing movies, the [OMDb API](http://www.omdbapi.com/) for actor lists for those movies, and [Wikipedia's API](https://www.mediawiki.org/wiki/API:Main_page) for actor biographies.
 ## Running
-The tool can be run from the command line with a simple call:
+The tool can be run from the command line with a simple call using Python 2.7:
 
     $ python average_actors_age.py
 
