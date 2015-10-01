@@ -4,7 +4,7 @@ A Python tool for finding the average ages of the casts of currently-playing mov
 ## Installing Dependencies with Pip
 If you do not have pip, you can follow the installation instructions [here](http://pip.readthedocs.org/en/latest/installing/).  Once you have pip installed, it is recommended to create a virtual environment for the project.  With the repo cloned into the virtual environment, you can do
 
-    $ .bin/activate
+    $ . bin/activate
     $ pip install -r AverageActorAges/requirements.txt
 
 ## API Dependencies
