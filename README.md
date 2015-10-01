@@ -1,6 +1,12 @@
 # AverageActorAges
 ## Description
 A Python tool for finding the average ages of the casts of currently-playing movies. It uses `pyplot` from `matplotlib` to generate an easy-to-read bar graph of the results. The bar graph is output as a PDF at the end of the process.
+## Installing Dependencies with Pip
+If you do not have pip, you can follow the installation instructions [here](http://pip.readthedocs.org/en/latest/installing/).  Once you have pip installed, it is recommended to create a virtual environment for the project.  With the repo cloned into the virtual environment, you can do
+
+    $ .bin/activate
+    $ pip install -r AverageActorAges/requirements.txt
+
 ## API Dependencies
 The tool relies on [MyAPIFilms](http://www.myapifilms.com/) for the list of currently-playing movies, the [OMDb API](http://www.omdbapi.com/) for actor lists for those movies, and [Wikipedia's API](https://www.mediawiki.org/wiki/API:Main_page) for actor biographies.
 ## Running
